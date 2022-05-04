@@ -22,7 +22,7 @@ const Search = () => {
     const [loading, setLoading] = useState(false);
 
     const getData = async (key) => {
-        console.log("varaible test", `${process.env.REACT_APP_API_ENDPOINT}/search`);
+        console.log("search test");
         try {
             let match_content = "text:" + key;
             let params = {
