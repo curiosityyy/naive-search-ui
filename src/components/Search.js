@@ -24,10 +24,18 @@ const Search = () => {
     const getData = async (key) => {
         console.log("varaible test", `${process.env.REACT_APP_API_ENDPOINT}/search`);
         try {
-            let params = { key };
-            let res = await axios.get(`${process.env.REACT_APP_API_ENDPOINT}/search`, { params });
-            console.log(res.data);
-            setData(res.data);
+            let match_content = "text:" + key;
+            let params = {
+              "from": 0,
+              "size": 10,
+              "index": "twitter",
+              "match": [ match_content ],
+              "sortby": "like_count:desc"
+            };
+            let res = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/search`, params);
+            console.log(res.data['hits']['hits']);
+            console.log("-------------------------------");
+            setData(res.data['hits']['hits']);
             setLoading(false);
 
         } catch (error) {
@@ -35,6 +43,7 @@ const Search = () => {
         }
     };
     console.log(searchKey);
+    console.log(data.length);
     return (
         <div style={{ width: "100%" }}>
             <form style={searchBar} onSubmit={event => {

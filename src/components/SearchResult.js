@@ -25,22 +25,23 @@ const useStyles = makeStyles({
 
 const SearchResult = ({ dataElement }) => {
   const classes = useStyles();
+  console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
   // const bull = <span className={classes.bullet}>•</span>;
   console.log({ movie: dataElement });
   return (
     <Card style={{ margin: "10px 0" }} className={classes.root} variant="outlined">
       <CardContent>
         <Typography className={classes.title} color="textSecondary" gutterBottom>
-          Budget: {dataElement.Budget}
+          <a href={dataElement["_source"]["url"]}>Twitter</a>
         </Typography>
         <Typography variant="h5" component="h2">
           {dataElement.Title}
         </Typography>
         <Typography className={classes.pos} color="textSecondary">
-          {dataElement.Cast}
+          {dataElement["_source"]["text"]}
         </Typography>
         <Typography variant="body2" component="p">
-          {dataElement.Plot}
+          👍 {dataElement["_source"]["like_count"]}
           <br />
         </Typography>
       </CardContent>
