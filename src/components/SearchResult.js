@@ -42,6 +42,8 @@ const SearchResult = ({ dataElement }) => {
         </Typography>
         <Typography variant="body2" component="p">
           👍 {dataElement["_source"]["like_count"]}
+          📣 {dataElement["_source"]["retweet_count"]}
+          📅 {dataElement["_source"]["@timestamp"]}
           <br />
         </Typography>
       </CardContent>
