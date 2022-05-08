@@ -1,37 +1,135 @@
 import React, { useState } from 'react';
+import chroma from 'chroma-js';
+import { ColourOption, colourOptions } from '../utils/data';
+import Select, { StylesConfig } from 'react-select';
+
 import TextField from '@material-ui/core/TextField';
 import axios from 'axios';
 import SearchResult from './SearchResult';
-import Select from 'react-select';
 
 const options = [
-    { value: '@timestamp', label: 'Date' },
-    { value: 'like_count', label: 'Like Count' },
-    { value: 'retweet_count', label: 'Retweet Count' }
+    { value: 'none', label: 'Sort By ...', color: '#666666'},
+    { value: 'created_at', label: 'Sort By Date',  color: '#00B8D9', isFixed: true },
+    { value: 'like_count', label: 'Sort By Like Count', color: '#0052CC'},
+    { value: 'retweet_count', label: 'Sort By Retweet Count', color: '#5243AA' }
 ];
 
-const customStyles = {
-    option: (provided, state) => ({
-        ...provided,
-        borderBottom: '1px dotted pink',
-        color: state.isSelected ? 'red' : 'blue',
-        padding: 20,
-    }),
-    control: () => ({
-        // none of react-select's styles are passed to <Control />
-        width: 200,
-    }),
-    singleValue: (provided, state) => {
-        const opacity = state.isDisabled ? 0.5 : 1;
-        const transition = 'opacity 300ms';
+const termsOptions = [
+    { value: 'btc', label: 'BTC',  color: '#00B8D9', isFixed: true },
+    { value: 'eth', label: 'ETH', color: '#0052CC'},
+    { value: 'amp', label: 'AMP', color: '#5243AA' }
+];
 
-        return { ...provided, opacity, transition };
+
+const dot = (color = 'transparent') => ({
+    alignItems: 'center',
+    display: 'flex',
+
+    ':before': {
+        backgroundColor: color,
+        borderRadius: 10,
+        content: '" "',
+        display: 'block',
+        marginRight: 8,
+        height: 10,
+        width: 10,
     },
-    display: "flex"
-}
+});
+
+const termsStyles: StylesConfig<termsOptions, true> = {
+    control: (styles) => ({ ...styles, backgroundColor: 'white' }),
+    option: (styles, { data, isDisabled, isFocused, isSelected }) => {
+        const color = chroma(data.color);
+        return {
+            ...styles,
+            backgroundColor: isDisabled
+                ? undefined
+                : isSelected
+                    ? data.color
+                    : isFocused
+                        ? color.alpha(0.1).css()
+                        : undefined,
+            color: isDisabled
+                ? '#ccc'
+                : isSelected
+                    ? chroma.contrast(color, 'white') > 2
+                        ? 'white'
+                        : 'black'
+                    : data.color,
+            cursor: isDisabled ? 'not-allowed' : 'default',
+
+            ':active': {
+                ...styles[':active'],
+                backgroundColor: !isDisabled
+                    ? isSelected
+                        ? data.color
+                        : color.alpha(0.3).css()
+                    : undefined,
+            },
+        };
+    },
+    multiValue: (styles, { data }) => {
+        const color = chroma(data.color);
+        return {
+            ...styles,
+            backgroundColor: color.alpha(0.1).css(),
+        };
+    },
+    multiValueLabel: (styles, { data }) => ({
+        ...styles,
+        color: data.color,
+    }),
+    multiValueRemove: (styles, { data }) => ({
+        ...styles,
+        color: data.color,
+        ':hover': {
+            backgroundColor: data.color,
+            color: 'white',
+        },
+    }),
+};
+
+const colourStyles: StylesConfig<options> = {
+    control: (styles) => ({ ...styles, backgroundColor: 'white' }),
+    option: (styles, { data, isDisabled, isFocused, isSelected }) => {
+        const color = chroma(data.color);
+        return {
+            ...styles,
+            backgroundColor: isDisabled
+                ? undefined
+                : isSelected
+                    ? data.color
+                    : isFocused
+                        ? color.alpha(0.1).css()
+                        : undefined,
+            color: isDisabled
+                ? '#ccc'
+                : isSelected
+                    ? chroma.contrast(color, 'white') > 2
+                        ? 'white'
+                        : 'black'
+                    : data.color,
+            cursor: isDisabled ? 'not-allowed' : 'default',
+
+            ':active': {
+                ...styles[':active'],
+                backgroundColor: !isDisabled
+                    ? isSelected
+                        ? data.color
+                        : color.alpha(0.3).css()
+                    : undefined,
+            },
+        };
+    },
+    input: (styles) => ({ ...styles, ...dot() }),
+    placeholder: (styles) => ({ ...styles, ...dot('#ccc') }),
+    singleValue: (styles, { data }) => ({ ...styles, ...dot(data.color) }),
+};
+
+
 const searchBar = {
-    width: 500,
-    height: 55,
+    width: "50%",
+    height: 30,
     display: "flex"
 };
 
@@ -44,7 +142,7 @@ const sesarchResultItem = {
 let params = {
     "from": 0,
     "size": 100,
-    "index": "twitter"
+    "index": "twitter-indexed-demo"
 };
 
 const Search = () => {
@@ -52,18 +150,32 @@ const Search = () => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const sortBy = async (sortParams) => {
-        params['sortby'] = sortParams['value'] + ':desc';
-        console.log("search test");
-        try {
+    const addTerms = function (terms) {
+        if(terms.length > 0) {
+            params['term'] = [];
+            terms.forEach(term => {
+                params['term'].push("index:" + term.value);
+            });
+        } else {
+            delete params['term'];
+        }
+    }
 
+    const sortBy = async (sortParams) => {
+        console.log(sortParams);
+        if (sortParams['value'] == 'none') {
+            delete  params['sortby'];
+        } else {
+            params['sortby'] = sortParams['value'] + ':desc';
+        }
+        console.log(params);
+        try {
             console.log(params)
             let res = await axios.post(`${process.env.REACT_APP_API_ENDPOINT}/search`, params);
             // console.log(res.data['hits']['hits']);
             console.log("-------------------------------");
             setData(res.data['hits']['hits']);
             setLoading(false);
-
         } catch (error) {
             console.log(error);
         }
@@ -88,26 +200,44 @@ const Search = () => {
     console.log(searchKey);
     console.log(data.length);
     return (
-        <div style={{ width: "100%" }}>
+        <div style={{ width: "100%", height: "10px" }}>
+            <form style={searchBar}>
+                <Select options={termsOptions}
+                        styles={termsStyles}
+                        autosize={true}
+                        isMulti
+                        name="Index"
+                        onChange = {(event) => addTerms(event)}
+                />
+            </form>
+            <br />
             <form style={searchBar} onSubmit={event => {
+                console.log(event);
                 event.preventDefault();
                 if (searchKey) {
                     setLoading(true);
                     getData(searchKey);
                 }
             }} noValidate autoComplete="off">
-                <TextField value={searchKey} onChange={(event) => setSearchKey(event.target.value)} id="outlined-basic" label="Search" variant="outlined" style={{ width: '400px', marginRight: "5px" }} />
-                <button type="button" onClick={() => {
-                        setSearchKey('');
-                        setData([]);
-                    }
-                } >Search</button>
+                <TextField value={searchKey} onChange={(event) => setSearchKey(event.target.value)} id="outlined-basic" label="Search" variant="outlined" size="small" style={{ width: '40%', height: '5%'}} />
+                {/*<button type="button" style={{ width: '10%', height: '40px', marginRight: "5px" }}*/}
+                {/*        onClick={() => {*/}
+                {/*            setSearchKey('');*/}
+                {/*            setData([]);*/}
+                {/*        }*/}
+                {/*} >Search</button>*/}
+
             </form>
-            <Select styles={customStyles}
-                    name="SortBy"
-                    defaultValue={{ label: "SortBy", value: 0 }}
-                    onChange = {value => sortBy(value).await}
-                    options={options} />
+            <br />
+            <form style={searchBar}>
+                <Select defaultValue={options[0]}
+                        options={options}
+                        styles={colourStyles}
+                        name="SortBy"
+                        onChange = {value => sortBy(value)}
+                        />
+            </form>
+
 
             <div style={{ display: "flex", width: "100%", justifyContent: "center", margin: "5px" }}>{loading ? <p >loading...</p> : (<div style={{ display: "flex" }}>
                 {data.length ? (
